@@ -144,7 +144,7 @@ class FinGameBot(Bot):
                                       reply_markup=self.quiz_next_keyboard())
 
     @staticmethod
-    def end(self, update, context):
+    def end(update, context):
         # df = pd.DataFrame(self._story, columns=['Question', 'Answer'])
         # df.to_csv(os.path.join('./logs', datetime.datetime.now().strftime("%Y%m%d-%H%M%S")+'.csv'))
         # self._story = []

@@ -1,14 +1,10 @@
 from utils import Bot, QuestionGenerator
-
+from utils.filters import FilterQuiz, FilterRound, FilterNothing
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from telegram.ext import MessageHandler, Filters
-from telegram import ReplyKeyboardMarkup
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram import Poll, ForceReply
-import os
+from telegram import KeyboardButton, ReplyKeyboardMarkup
 import json
-import pandas as pd
-import datetime
 
 
 class FinGameBot(Bot):
@@ -29,14 +25,31 @@ class FinGameBot(Bot):
         start_handler = CommandHandler('start', self.start)
         self._dispatcher.add_handler(start_handler)
 
-        echo_handler = MessageHandler(Filters.text & (~Filters.command), self.echo)
-        self._dispatcher.add_handler(echo_handler)
+        quiz_filter = FilterQuiz()
+        round_filter = FilterRound()
+        non_filter = FilterNothing()
 
-        caps_handler = CommandHandler('caps', self.caps)
-        self._dispatcher.add_handler(caps_handler)
+        msg_quiz_handler = MessageHandler(quiz_filter, self.quiz_start)
+        self._dispatcher.add_handler(msg_quiz_handler)
+
+        msg_round_handler = MessageHandler(round_filter, self.round)
+        self._dispatcher.add_handler(msg_round_handler)
+
+        echo_handler = MessageHandler(Filters.text & (~Filters.command) & (~non_filter) &
+                                      (~quiz_filter) & (~round_filter), self.unknown)
+        self._dispatcher.add_handler(echo_handler)
+        #
+        # caps_handler = CommandHandler('caps', self.caps)
+        # self._dispatcher.add_handler(caps_handler)
 
         quiz_handler = CommandHandler('quiz', self.quiz_start)
         self._dispatcher.add_handler(quiz_handler)
+
+        round_handler = CommandHandler('round', self.round)
+        self._dispatcher.add_handler(round_handler)
+
+        help_handler = CommandHandler('help', self.help)
+        self._dispatcher.add_handler(help_handler)
 
         unknown_handler = MessageHandler(Filters.command, self.unknown)
         self._dispatcher.add_handler(unknown_handler)
@@ -71,31 +84,53 @@ class FinGameBot(Bot):
         return InlineKeyboardMarkup(keyboard)
 
     @staticmethod
+    def quiz_help_keyboard():
+        keyboard = [[KeyboardButton("Олег, давай поиграем в quiz")],
+                    [KeyboardButton("Олег, я хочу поиграть в Раунд")],
+                    [KeyboardButton("Я не хочу играть.")]]
+        return ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
+
+    @staticmethod
     def quiz_next_keyboard():
         keyboard = [[InlineKeyboardButton("Следующий вопрос", callback_data='quiz')],
                     [InlineKeyboardButton("Завершить игру", callback_data='end')]]
         return InlineKeyboardMarkup(keyboard)
 
-    @staticmethod
-    def start(update, context):
-        context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!")
+    # @staticmethod
+    def start(self, update, context):
+        hello_msg = "Я твой личный финансовый консультант Олег. " \
+                    "Я помогу разобраться в принципах финансовой грамотности и " \
+                    "покажу, как ты запросто сможешь применять их на практике."
+        context.bot.send_message(chat_id=update.effective_chat.id, text=hello_msg,
+                                 reply_markup=self.quiz_help_keyboard())
 
     @staticmethod
-    def echo(update, context):
-        context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
+    def help(update, context):
+        help_msg = "/quiz - Поиграть в квиз с Олегом, \n" \
+                   "/round - Поиграть в Раунд с Олегом."
+        context.bot.send_message(chat_id=update.effective_chat.id, text=help_msg)
+
+    def unknown(self, update, context):
+        msg = "Давай лучше поиграем в квиз или Раунд?"
+        context.bot.send_message(chat_id=update.effective_chat.id, text=msg,
+                                 reply_markup=self.quiz_help_keyboard())
+        # context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
 
     @staticmethod
     def caps(update, context):
         text_caps = ' '.join(context.args).upper()
         context.bot.send_message(chat_id=update.effective_chat.id, text=text_caps)
 
-    @staticmethod
-    def unknown(update, context):
-        context.bot.send_message(chat_id=update.effective_chat.id, text="Что за дичь?).")
+    # @staticmethod
+    # def unknown(update, context):
+    #     context.bot.send_message(chat_id=update.effective_chat.id, text="Что за дичь?).")
 
     def quiz_start(self, update, context):
         update.message.reply_text("Ты готов испытать свои силы?",
                                   reply_markup=self.quiz_start_keyboard())
+
+    def round(self, update, context):
+        context.bot.send_message(chat_id=update.effective_chat.id, text="Not implemented error")
 
     def quiz(self, update, context):
         test = self._quiz_data._blocks[0]
@@ -149,6 +184,5 @@ class FinGameBot(Bot):
         # df.to_csv(os.path.join('./logs', datetime.datetime.now().strftime("%Y%m%d-%H%M%S")+'.csv'))
         # self._story = []
         query = update.callback_query
-        context.bot.edit_message_text(chat_id=query.message.chat_id,
-                                      message_id=query.message.message_id,
-                                      text="Буду ждать нового раунда")
+        context.bot.send_message(chat_id=query.message.chat_id,
+                                 text="Буду ждать новой игры")

@@ -1,5 +1,5 @@
 from utils import Bot, QuestionGenerator, QuizSequence
-from utils.filters import FilterQuiz, FilterRound, FilterNothing
+from utils.filters import FilterQuiz, FilterRound, FilterNothing, FilterNone
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from telegram.ext import MessageHandler, Filters
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -36,14 +36,15 @@ class FinGameBot(Bot):
         quiz_filter = FilterQuiz()
         round_filter = FilterRound()
         non_filter = FilterNothing()
+        None_filter = FilterNone()
 
-        msg_quiz_handler = MessageHandler(quiz_filter, self.quiz_start)
+        msg_quiz_handler = MessageHandler((~None_filter) & quiz_filter, self.quiz_start)
         self._dispatcher.add_handler(msg_quiz_handler)
 
-        msg_round_handler = MessageHandler(round_filter, self.round)
+        msg_round_handler = MessageHandler((~None_filter) & round_filter, self.round)
         self._dispatcher.add_handler(msg_round_handler)
 
-        echo_handler = MessageHandler(Filters.text & (~Filters.command) & (~non_filter) &
+        echo_handler = MessageHandler((~None_filter) & Filters.text & (~Filters.command) & (~non_filter) &
                                       (~quiz_filter) & (~round_filter), self.unknown)
         self._dispatcher.add_handler(echo_handler)
         #
@@ -95,6 +96,12 @@ class FinGameBot(Bot):
         return InlineKeyboardMarkup(keyboard)
 
     @staticmethod
+    def quiz_cont_keyboard():
+        keyboard = [[InlineKeyboardButton("Продолжить игру", callback_data='quiz')],
+                    [InlineKeyboardButton("Завершить игру", callback_data='end')]]
+        return InlineKeyboardMarkup(keyboard)
+
+    @staticmethod
     def quiz_help_keyboard():
         keyboard = [[KeyboardButton("Олег, давай поиграем в quiz")],
                     [KeyboardButton("Олег, я хочу поиграть в Раунд")],
@@ -141,8 +148,6 @@ class FinGameBot(Bot):
 
     def quiz(self, update, context):
         test = self._quiz_sequence
-        # test = self._quiz_data._blocks[0]
-        # test = self._quiz_data
         if self._cur_block > self._quiz_sequence.get_sequence_size():
             self._cur_block = 0
             context.bot.send_message(chat_id=update.effective_chat.id,
@@ -168,7 +173,8 @@ class FinGameBot(Bot):
             context.bot.send_message(chat_id=update.effective_chat.id,
                                      text=advice)
             context.bot.send_photo(chat_id=update.effective_chat.id,
-                                   photo=open(picture, 'rb'))
+                                   photo=open(picture, 'rb'),
+                                   reply_markup=self.quiz_cont_keyboard())
             self._cur_block += 1
             self._cur_question = 0
 

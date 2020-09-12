@@ -21,6 +21,7 @@ class FinGameBot(Bot):
     def read_data(self, key: str):
         self._quiz_sequence = QuizSequence("data/quiz_data.json")
         print(self._quiz_sequence.get_block(3))
+        print(self._quiz_sequence.get_question(0,0))
         print(self._quiz_sequence)
         with open(self._data_pth, encoding='utf-8') as read_file:
             data = json.load(read_file)

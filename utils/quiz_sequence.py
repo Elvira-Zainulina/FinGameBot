@@ -17,10 +17,13 @@ class QuizSequence(object):
                 self._blocks.append(QuizBlock(block))
 
     def get_block(self, block_id: int) -> QuizBlock:
-        if len(self._blocks) > block_id >= 0:
+        if self.get_sequence_size() > block_id >= 0:
             return self._blocks[block_id]
-        elif self.get_block_count() > 0:
+        elif self.get_sequence_size() > 0:
             return self._blocks[0]
 
-    def get_block_count(self) -> int:
+    def get_sequence_size(self) -> int:
         return len(self._blocks)
+
+    def get_question(self, block_id: int, question_id: int):
+        return self.get_block(block_id).get_question(question_id)

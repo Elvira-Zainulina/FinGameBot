@@ -21,7 +21,19 @@ def quiz_keyboard(options, right_answer):
                  InlineKeyboardButton(options[1], callback_data=answers[1])],
                 [InlineKeyboardButton(options[2], callback_data=answers[2]),
                  InlineKeyboardButton(options[3], callback_data=answers[3])],
-                [InlineKeyboardButton("End game", callback_data='end')]]
+                [InlineKeyboardButton("Завершить игру", callback_data='end')]]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def quiz_start_keyboard():
+    keyboard = [[InlineKeyboardButton("Да, готов", callback_data='quiz')],
+                [InlineKeyboardButton("Нет, не готов", callback_data='end')]]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def quiz_next_keyboard():
+    keyboard = [[InlineKeyboardButton("Следующий вопрос", callback_data='quiz')],
+                [InlineKeyboardButton("Завершить игру", callback_data='end')]]
     return InlineKeyboardMarkup(keyboard)
 
 
@@ -42,21 +54,30 @@ def unknown(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I didn't understand that command.")
 
 
+def quiz_start(update, context):
+    update.message.reply_text("Ты готов испытать свои силы?",
+                              reply_markup=quiz_start_keyboard())
+
+
 def quiz(update, context):
-    question = "Question."
-    options = ['Ans1', 'Ans2', "Ans3", "Ans4"]
+    question = 'Questions'
+    options = ['Ans1', 'Ans2', 'Ans3', 'Ans4']
     right_answer = 0
 
-    update.message.reply_text(question,
-                              reply_markup=quiz_keyboard(options, right_answer))
+    query = update.callback_query
+    context.bot.edit_message_text(chat_id=query.message.chat_id,
+                                  message_id=query.message.message_id,
+                                  text=question,
+                                  reply_markup=quiz_keyboard(options, right_answer))
 
-    
+
 def right(update, context):
     congrats = 'Congrats. Explanation.'
     query = update.callback_query
     context.bot.edit_message_text(chat_id=query.message.chat_id,
                                   message_id=query.message.message_id,
-                                  text=congrats)
+                                  text=congrats,
+                                  reply_markup=quiz_next_keyboard())
 
 
 def wrong(update, context):
@@ -64,8 +85,9 @@ def wrong(update, context):
 
     query = update.callback_query
     context.bot.edit_message_text(chat_id=query.message.chat_id,
-                          message_id=query.message.message_id,
-                          text=explanation)
+                                  message_id=query.message.message_id,
+                                  text=explanation,
+                                  reply_markup=quiz_next_keyboard())
     # context.bot.send_message(chat_id=update.effective_chat.id, text=explanation)
 
 
@@ -73,7 +95,7 @@ def end(update, context):
     query = update.callback_query
     context.bot.edit_message_text(chat_id=query.message.chat_id,
                                   message_id=query.message.message_id,
-                                  text="See you later.")
+                                  text="Буду ждать нового раунда")
 
 # def quiz(update, context):
 #     keyboard = [['Ans1', 'Ans2'], ["Ans3", "Ans4"]]
@@ -100,12 +122,13 @@ dispatcher.add_handler(echo_handler)
 caps_handler = CommandHandler('caps', caps)
 dispatcher.add_handler(caps_handler)
 
-quiz_handler = CommandHandler('quiz', quiz)
+quiz_handler = CommandHandler('quiz', quiz_start)
 dispatcher.add_handler(quiz_handler)
 
 unknown_handler = MessageHandler(Filters.command, unknown)
 dispatcher.add_handler(unknown_handler)
 
+dispatcher.add_handler(CallbackQueryHandler(quiz, pattern='quiz'))
 dispatcher.add_handler(CallbackQueryHandler(right, pattern='right'))
 dispatcher.add_handler(CallbackQueryHandler(wrong, pattern='wrong'))
 dispatcher.add_handler(CallbackQueryHandler(end, pattern='end'))

@@ -160,8 +160,7 @@ class FinGameBot(Bot):
 
     def update_cur_position(self, update, context):
         block = self._quiz_sequence.get_block(self._cur_block)
-        print(self._cur_question, self._cur_block, block.get_block_size())
-        if self._cur_question < block.get_block_size():
+        if self._cur_question < block.get_block_size() - 1:
             self._cur_question += 1
         else:
             advice = block.get_advice()

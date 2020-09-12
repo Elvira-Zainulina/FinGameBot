@@ -1,4 +1,5 @@
-from utils.template_bot import Bot
+from utils import Bot, QuestionGenerator
+
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from telegram.ext import MessageHandler, Filters
 from telegram import ReplyKeyboardMarkup
@@ -9,19 +10,17 @@ import json
 
 
 class FinGameBot(Bot):
-    quiz_data_ = None
+    _quiz_data = None
+    _cur_question = 0
 
     def __init__(self, bot_token: str, data_pth: str):
         super(FinGameBot, self).__init__(bot_token, data_pth)
-
-        print(self._bot_token)
-        self.read_data("quiz")
+        self._quiz_data = self.read_data("quiz")
 
     def read_data(self, key: str):
-        print(key)
         with open(self._data_pth) as read_file:
             data = json.load(read_file)
-            print(data)
+            return QuestionGenerator(key, data[key])
 
     def append_handlers(self):
         start_handler = CommandHandler('start', self.start)
@@ -45,12 +44,20 @@ class FinGameBot(Bot):
         self._dispatcher.add_handler(CallbackQueryHandler(self.end, pattern='end'))
 
     @staticmethod
-    def quiz_keyboard(options, right_answer):
+    def quiz_keyboard4(options, right_answer):
         answers = ['right' if right_answer == i else 'wrong' for i in range(4)]
         keyboard = [[InlineKeyboardButton(options[0], callback_data=answers[0]),
                      InlineKeyboardButton(options[1], callback_data=answers[1])],
                     [InlineKeyboardButton(options[2], callback_data=answers[2]),
                      InlineKeyboardButton(options[3], callback_data=answers[3])],
+                    [InlineKeyboardButton("Завершить игру", callback_data='end')]]
+        return InlineKeyboardMarkup(keyboard)
+
+    @staticmethod
+    def quiz_keyboard2(options, right_answer):
+        answers = ['right' if right_answer == i else 'wrong' for i in range(2)]
+        keyboard = [[InlineKeyboardButton(options[0], callback_data=answers[0]),
+                     InlineKeyboardButton(options[1], callback_data=answers[1])],
                     [InlineKeyboardButton("Завершить игру", callback_data='end')]]
         return InlineKeyboardMarkup(keyboard)
 
@@ -81,22 +88,26 @@ class FinGameBot(Bot):
 
     @staticmethod
     def unknown(update, context):
-        context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I didn't understand that command.")
+        context.bot.send_message(chat_id=update.effective_chat.id, text="Что за дичь?).")
 
     def quiz_start(self, update, context):
         update.message.reply_text("Ты готов испытать свои силы?",
                                   reply_markup=self.quiz_start_keyboard())
 
     def quiz(self, update, context):
-        question = 'Questions'
-        options = ['Ans1', 'Ans2', 'Ans3', 'Ans4']
-        right_answer = 0
+        test = self._quiz_data._blocks[0]
+        # test = self._quiz_data
+        question_obj = test[self._cur_question]
+        question = question_obj.get_text()
+        options = question_obj.get_vars()
+        right_answer = question_obj.get_true()
+        self._cur_question += 1
 
         query = update.callback_query
         context.bot.edit_message_text(chat_id=query.message.chat_id,
                                       message_id=query.message.message_id,
                                       text=question,
-                                      reply_markup=self.quiz_keyboard(options, right_answer))
+                                      reply_markup=self.quiz_keyboard2(options, right_answer))
 
     def right(self, update, context):
         congrats = 'Congrats. Explanation.'

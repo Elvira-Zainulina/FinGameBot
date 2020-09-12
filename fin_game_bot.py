@@ -75,8 +75,8 @@ class FinGameBot(Bot):
     @staticmethod
     def quiz_keyboard2(options, right_answer):
         answers = ['right' if (right_answer - 1) == i else 'wrong' for i in range(2)]
-        keyboard = [[InlineKeyboardButton(options[0], callback_data=answers[0]),
-                     InlineKeyboardButton(options[1], callback_data=answers[1])],
+        keyboard = [[InlineKeyboardButton(options[0], callback_data=answers[0])],
+                    [InlineKeyboardButton(options[1], callback_data=answers[1])],
                     [InlineKeyboardButton("Завершить игру", callback_data='end')]]
         return InlineKeyboardMarkup(keyboard)
 

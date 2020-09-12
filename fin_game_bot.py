@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from utils import Bot, QuestionGenerator
 
 from telegram.ext import CommandHandler, CallbackQueryHandler
@@ -21,7 +22,7 @@ class FinGameBot(Bot):
         self._quiz_data = self.read_data("quiz")
 
     def read_data(self, key: str):
-        with open(self._data_pth) as read_file:
+        with open(self._data_pth, encoding='utf-8') as read_file:
             data = json.load(read_file)
             return QuestionGenerator(key, data[key])
 

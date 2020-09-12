@@ -7,11 +7,14 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram import Poll, ForceReply
 import os
 import json
+import pandas as pd
+import datetime
 
 
 class FinGameBot(Bot):
     _quiz_data = None
     _cur_question = 0
+    _story = []
 
     def __init__(self, bot_token: str, data_pth: str):
         super(FinGameBot, self).__init__(bot_token, data_pth)
@@ -111,6 +114,9 @@ class FinGameBot(Bot):
 
     def right(self, update, context):
         congrats = 'Congrats. Explanation.'
+        question_obj = self._quiz_data._blocks[0][self._cur_question]
+        self._story.append([question_obj.get_text(),
+                            question_obj.get_vars()[question_obj.get_vars()]])
         query = update.callback_query
         context.bot.edit_message_text(chat_id=query.message.chat_id,
                                       message_id=query.message.message_id,
@@ -119,15 +125,20 @@ class FinGameBot(Bot):
 
     def wrong(self, update, context):
         explanation = 'Explanation.'
-
+        question_obj = self._quiz_data._blocks[0][self._cur_question]
+        self._story.append([question_obj.get_text(),
+                            question_obj.get_vars()[question_obj.get_vars() % 2]])
         query = update.callback_query
         context.bot.edit_message_text(chat_id=query.message.chat_id,
                                       message_id=query.message.message_id,
                                       text=explanation,
                                       reply_markup=self.quiz_next_keyboard())
 
-    @staticmethod
-    def end(update, context):
+    # @staticmethod
+    def end(self, update, context):
+        df = pd.DataFrame(self._story, columns=['Question', 'Answer'])
+        df.to_csv(os.path.join('./logs', datetime.datetime.now().strftime("%Y%m%d-%H%M%S")))
+        self._story = []
         query = update.callback_query
         context.bot.edit_message_text(chat_id=query.message.chat_id,
                                       message_id=query.message.message_id,

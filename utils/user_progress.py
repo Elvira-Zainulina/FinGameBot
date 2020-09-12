@@ -4,4 +4,8 @@ class UserProgress(object):
         self._current_quiz_question = 0
         self._current_quiz_stage = 0
         self._current_question = None
+        self._current_round_level = 0
+        self._current_round_question = 0
+
+
 

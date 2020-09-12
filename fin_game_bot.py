@@ -20,9 +20,9 @@ class FinGameBot(Bot):
 
     def read_data(self, key: str):
         self._quiz_sequence = QuizSequence("data/quiz_data.json")
-        print(self._quiz_sequence.get_block(3))
-        print(self._quiz_sequence.get_question(0,0))
-        print(self._quiz_sequence)
+        # print(self._quiz_sequence.get_block(3))
+        # print(self._quiz_sequence.get_question(0,0))
+        # print(self._quiz_sequence)
         with open(self._data_pth, encoding='utf-8') as read_file:
             data = json.load(read_file)
             return QuestionGenerator(key, data[key])
@@ -112,8 +112,9 @@ class FinGameBot(Bot):
         context.bot.send_message(chat_id=update.effective_chat.id, text=help_msg)
 
     def image(self, update, context):
+        img_path = self._quiz_sequence.get_block(3).get_advice_pic()
         context.bot.send_photo(update.effective_chat.id,
-                               'https://www.soyuz.ru/public/uploads/files/2/7442148/2020071012030153ea07b13d.jpg')
+                               photo=open(img_path, 'rb'))
 
     # @staticmethod
     def start(self, update, context):
@@ -138,7 +139,9 @@ class FinGameBot(Bot):
 
     def quiz(self, update, context):
         test = self._quiz_data._blocks[0]
-        query = update.callback_query
+        query = update.effective_chat.id
+
+
         # test = self._quiz_data
         if self._cur_question >= len(test):
             self._cur_question = 0

@@ -51,6 +51,9 @@ class FinGameBot(Bot):
         help_handler = CommandHandler('help', self.help)
         self._dispatcher.add_handler(help_handler)
 
+        image_handler = CommandHandler('image', self.image)
+        self._dispatcher.add_handler(image_handler)
+
         unknown_handler = MessageHandler(Filters.command, self.unknown)
         self._dispatcher.add_handler(unknown_handler)
 
@@ -96,6 +99,16 @@ class FinGameBot(Bot):
                     [InlineKeyboardButton("Завершить игру", callback_data='end')]]
         return InlineKeyboardMarkup(keyboard)
 
+    @staticmethod
+    def help(update, context):
+        help_msg = "/quiz - Поиграть в квиз с Олегом, \n" \
+                   "/round - Поиграть в Раунд с Олегом."
+        context.bot.send_message(chat_id=update.effective_chat.id, text=help_msg)
+
+    def image(self, update, context):
+        context.bot.send_photo(update.effective_chat.id,
+                               'https://www.soyuz.ru/public/uploads/files/2/7442148/2020071012030153ea07b13d.jpg')
+
     # @staticmethod
     def start(self, update, context):
         hello_msg = "Я твой личный финансовый консультант Олег. " \
@@ -104,33 +117,18 @@ class FinGameBot(Bot):
         context.bot.send_message(chat_id=update.effective_chat.id, text=hello_msg,
                                  reply_markup=self.quiz_help_keyboard())
 
-    @staticmethod
-    def help(update, context):
-        help_msg = "/quiz - Поиграть в квиз с Олегом, \n" \
-                   "/round - Поиграть в Раунд с Олегом."
-        context.bot.send_message(chat_id=update.effective_chat.id, text=help_msg)
-
     def unknown(self, update, context):
         msg = "Давай лучше поиграем в квиз или Раунд?"
         context.bot.send_message(chat_id=update.effective_chat.id, text=msg,
                                  reply_markup=self.quiz_help_keyboard())
         # context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
 
-    @staticmethod
-    def caps(update, context):
-        text_caps = ' '.join(context.args).upper()
-        context.bot.send_message(chat_id=update.effective_chat.id, text=text_caps)
-
-    # @staticmethod
-    # def unknown(update, context):
-    #     context.bot.send_message(chat_id=update.effective_chat.id, text="Что за дичь?).")
+    def round(self, update, context):
+        context.bot.send_message(chat_id=update.effective_chat.id, text="Not implemented error")
 
     def quiz_start(self, update, context):
         update.message.reply_text("Ты готов испытать свои силы?",
                                   reply_markup=self.quiz_start_keyboard())
-
-    def round(self, update, context):
-        context.bot.send_message(chat_id=update.effective_chat.id, text="Not implemented error")
 
     def quiz(self, update, context):
         test = self._quiz_data._blocks[0]

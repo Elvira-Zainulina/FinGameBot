@@ -2,19 +2,14 @@ from utils import Bot, QuestionGenerator
 
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from telegram.ext import MessageHandler, Filters
-from telegram import ReplyKeyboardMarkup
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram import Poll, ForceReply
-import os
 import json
-import pandas as pd
-import datetime
 
 
 class FinGameBot(Bot):
+    _users_progress = {}
     _quiz_data = None
     _cur_question = 0
-    # _story = []
 
     def __init__(self, bot_token: str, data_pth: str):
         super(FinGameBot, self).__init__(bot_token, data_pth)
@@ -64,6 +59,7 @@ class FinGameBot(Bot):
                     [InlineKeyboardButton("Завершить игру", callback_data='end')]]
         return InlineKeyboardMarkup(keyboard)
 
+
     @staticmethod
     def quiz_start_keyboard():
         keyboard = [[InlineKeyboardButton("Да, готов", callback_data='quiz')],
@@ -78,7 +74,12 @@ class FinGameBot(Bot):
 
     @staticmethod
     def start(update, context):
-        context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!")
+        context.bot.send_message(chat_id=update.effective_chat.id,
+                                 text="Привет! Я твой личный финансовый консультант Олег. Я помогу разобраться в "
+                                      "принципах финансовой грамотности и покажу, как ты запросто сможешь применять "
+                                      "их на практике. Чтобы узнать, как прямо сейчас ты можешь зарабатывать "
+                                      "больше, а тратить меньше проходи Квиз! Если хочешь помериться знаниями"
+                                      " с друзьями, приглашай их на Раунд!")
 
     @staticmethod
     def echo(update, context):
@@ -98,6 +99,11 @@ class FinGameBot(Bot):
                                   reply_markup=self.quiz_start_keyboard())
 
     def quiz(self, update, context):
+        chat_instance = update["callback_query"]["chat_instance"]
+        # if self._users_progress[chat_instance] is None:
+        #     print("new user")
+        #     self._users_progress[chat_instance] = {}
+        #     self._users_progress[chat_instance]["cur_question"] = 0
         test = self._quiz_data._blocks[0]
         query = update.callback_query
         # test = self._quiz_data

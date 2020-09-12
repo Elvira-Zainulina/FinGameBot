@@ -99,7 +99,10 @@ class FinGameBot(Bot):
                                   reply_markup=self.quiz_start_keyboard())
 
     def quiz(self, update, context):
+        user_id = update.effective_chat.id
         chat_instance = update["callback_query"]["chat_instance"]
+        print(chat_instance, update.effective_chat.id)
+
         # if self._users_progress[chat_instance] is None:
         #     print("new user")
         #     self._users_progress[chat_instance] = {}

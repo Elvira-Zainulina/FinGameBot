@@ -1,4 +1,5 @@
-from utils.template_bot import Bot
+from utils import Bot, QuestionGenerator
+
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from telegram.ext import MessageHandler, Filters
 from telegram import ReplyKeyboardMarkup
@@ -9,19 +10,21 @@ import json
 
 
 class FinGameBot(Bot):
-    quiz_data_ = None
+    _quiz_data = None
 
     def __init__(self, bot_token: str, data_pth: str):
         super(FinGameBot, self).__init__(bot_token, data_pth)
 
-        print(self._bot_token)
-        self.read_data("quiz")
+        _quiz_data = self.read_data("quiz")
+        if _quiz_data is None:
+            exit(1)
+        else:
+            print(_quiz_data._blocks)
 
     def read_data(self, key: str):
-        print(key)
         with open(self._data_pth) as read_file:
             data = json.load(read_file)
-            print(data)
+            return QuestionGenerator(key, data[key])
 
     def append_handlers(self):
         start_handler = CommandHandler('start', self.start)

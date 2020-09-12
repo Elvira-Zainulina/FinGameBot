@@ -1,3 +1,5 @@
+run.py
+
 venv/
 .idea/
 *__pycache__/*
@@ -133,6 +135,7 @@ pip-selfcheck.json
 .idea/mongoSettings.xml
 
 .idea/
+
 
 ## File-based project format:
 *.iws

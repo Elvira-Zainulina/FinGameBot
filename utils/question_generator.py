@@ -1,5 +1,5 @@
 from utils.structures import Question
-
+from typing import List
 
 class QuestionGenerator(object):
     def __init__(self, key: str, data: list):
@@ -11,5 +11,6 @@ class QuestionGenerator(object):
                 cur_block.append(Question(qa))
             self._blocks.append(cur_block)
 
-    def __next__(self):
+
+    def __next__(self) -> List[Question]:
         pass

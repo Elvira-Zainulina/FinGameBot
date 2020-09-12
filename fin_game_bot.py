@@ -1,4 +1,4 @@
-from utils import Bot, QuestionGenerator
+from utils import Bot, QuestionGenerator, QuizSequence
 from utils.filters import FilterQuiz, FilterRound, FilterNothing
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from telegram.ext import MessageHandler, Filters
@@ -9,6 +9,8 @@ import json
 
 class FinGameBot(Bot):
     _quiz_data = None
+    _quiz_sequence = None
+    _round_sequence = None
     _cur_question = 0
     # _story = []
 
@@ -17,6 +19,10 @@ class FinGameBot(Bot):
         self._quiz_data = self.read_data("quiz")
 
     def read_data(self, key: str):
+        self._quiz_sequence = QuizSequence("data/quiz_data.json")
+        print(self._quiz_sequence.get_block(3))
+        print(self._quiz_sequence.get_question(0,0))
+        print(self._quiz_sequence)
         with open(self._data_pth, encoding='utf-8') as read_file:
             data = json.load(read_file)
             return QuestionGenerator(key, data[key])

@@ -1,4 +1,5 @@
 from .variant import Variant
+from typing import List
 
 
 class Question:
@@ -8,16 +9,16 @@ class Question:
         self._true_variant = data["true_variant"]
 
     @staticmethod
-    def _get_variants(data: list):
+    def _get_variants(data: list) -> List[Variant]:
         variants = []
         for var in data:
             variants.append(Variant(var))
         return variants
 
-    def get_text(self):
+    def get_text(self) -> str:
         return self._question
 
-    def get_true(self):
+    def get_true(self) -> int:
         return self._true_variant
 
     def get_vars(self):

@@ -14,7 +14,7 @@ import datetime
 class FinGameBot(Bot):
     _quiz_data = None
     _cur_question = 0
-    _story = []
+    # _story = []
 
     def __init__(self, bot_token: str, data_pth: str):
         super(FinGameBot, self).__init__(bot_token, data_pth)
@@ -103,10 +103,9 @@ class FinGameBot(Bot):
         # test = self._quiz_data
         if self._cur_question >= len(test):
             self._cur_question = 0
-            context.bot.edit_message_text(chat_id=query.message.chat_id,
-                                          message_id=query.message.message_id,
-                                          text="Новых вопросов нет. Готов ли ты к повторению?",
-                                          reply_markup=self.quiz_start_keyboard())
+            context.bot.send_message(chat_id=update.effective_chat.id,
+                                     text="Новых вопросов нет. Готов ли ты к повторению?",
+                                     reply_markup=self.quiz_start_keyboard())
             return
 
         question_obj = test[self._cur_question]
@@ -115,16 +114,16 @@ class FinGameBot(Bot):
         right_answer = question_obj.get_true()
         self._cur_question += 1
 
-        context.bot.edit_message_text(chat_id=query.message.chat_id,
-                                      message_id=query.message.message_id,
-                                      text=question,
-                                      reply_markup=self.quiz_keyboard2(options, right_answer))
+        context.bot.send_message(chat_id=update.effective_chat.id, text=question,
+                                 reply_markup=self.quiz_keyboard2(options, right_answer))
 
     def right(self, update, context):
-        congrats = 'Congrats. Explanation.'
         question_obj = self._quiz_data._blocks[0][self._cur_question - 1]
-        self._story.append([question_obj.get_text(),
-                            question_obj.get_vars()[question_obj.get_true()]])
+        congrats = question_obj.get_text() + '\n'
+        ans = question_obj.get_vars()[question_obj.get_true() % 2]
+        congrats += f'Правильно. {ans}. Explanation.'
+        # self._story.append([question_obj.get_text(),
+        #                     question_obj.get_vars()[question_obj.get_true()]])
         query = update.callback_query
         context.bot.edit_message_text(chat_id=query.message.chat_id,
                                       message_id=query.message.message_id,
@@ -132,21 +131,23 @@ class FinGameBot(Bot):
                                       reply_markup=self.quiz_next_keyboard())
 
     def wrong(self, update, context):
-        explanation = 'Explanation.'
         question_obj = self._quiz_data._blocks[0][self._cur_question - 1]
-        self._story.append([question_obj.get_text(),
-                            question_obj.get_vars()[question_obj.get_true() % 2]])
+        explanation = question_obj.get_text() + '\n'
+        ans = question_obj.get_vars()[question_obj.get_true() % 2]
+        explanation += f'К сожалению, ответ "{ans}" неправильный. \n' + 'Explanation.'
+        # self._story.append([question_obj.get_text(),
+        #                     question_obj.get_vars()[question_obj.get_true() % 2]])
         query = update.callback_query
         context.bot.edit_message_text(chat_id=query.message.chat_id,
                                       message_id=query.message.message_id,
                                       text=explanation,
                                       reply_markup=self.quiz_next_keyboard())
 
-    # @staticmethod
+    @staticmethod
     def end(self, update, context):
-        df = pd.DataFrame(self._story, columns=['Question', 'Answer'])
-        df.to_csv(os.path.join('./logs', datetime.datetime.now().strftime("%Y%m%d-%H%M%S")+'.csv'))
-        self._story = []
+        # df = pd.DataFrame(self._story, columns=['Question', 'Answer'])
+        # df.to_csv(os.path.join('./logs', datetime.datetime.now().strftime("%Y%m%d-%H%M%S")+'.csv'))
+        # self._story = []
         query = update.callback_query
         context.bot.edit_message_text(chat_id=query.message.chat_id,
                                       message_id=query.message.message_id,

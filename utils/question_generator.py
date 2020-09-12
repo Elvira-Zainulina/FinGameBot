@@ -10,3 +10,6 @@ class QuestionGenerator(object):
             for qa in block:
                 cur_block.append(Question(qa))
             self._blocks.append(cur_block)
+
+    def __next__(self):
+        pass

@@ -52,15 +52,28 @@ def quiz(update, context):
 
     
 def right(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Right.")
+    congrats = 'Congrats. Explanation.'
+    query = update.callback_query
+    context.bot.edit_message_text(chat_id=query.message.chat_id,
+                                  message_id=query.message.message_id,
+                                  text=congrats)
 
 
 def wrong(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Wrong.")
+    explanation = 'Explanation.'
+
+    query = update.callback_query
+    context.bot.edit_message_text(chat_id=query.message.chat_id,
+                          message_id=query.message.message_id,
+                          text=explanation)
+    # context.bot.send_message(chat_id=update.effective_chat.id, text=explanation)
 
 
 def end(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="End.")
+    query = update.callback_query
+    context.bot.edit_message_text(chat_id=query.message.chat_id,
+                                  message_id=query.message.message_id,
+                                  text="See you later.")
 
 # def quiz(update, context):
 #     keyboard = [['Ans1', 'Ans2'], ["Ans3", "Ans4"]]

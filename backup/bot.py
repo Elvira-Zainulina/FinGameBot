@@ -7,7 +7,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram import Poll, ForceReply
 
 
-updater = Updater(token='1162860717:AAF1KoaSWhtKruIO77LYMBccmRou9-t9Q2A', use_context=True)
+updater = Updater(token='1168824743:AAEczB0ToLlw-TIHhuQivVaSvHN3OisufMI', use_context=True)
 
 dispatcher = updater.dispatcher
 

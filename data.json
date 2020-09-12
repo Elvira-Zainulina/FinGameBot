@@ -1,0 +1,50 @@
+{
+  "quiz": {
+    "blocks": [
+      [
+        {
+          "question": "",
+          "variants": [
+            "",
+            "",
+            "",
+            ""
+          ],
+          "true_answer": 3
+        },
+        {
+          "question": "",
+          "variants": [
+            "",
+            "",
+            "",
+            ""
+          ],
+          "true_answer": 3
+        }
+      ],
+      [
+        {
+          "question": "",
+          "variants": [
+            "",
+            "",
+            "",
+            ""
+          ],
+          "true_answer": 3
+        },
+        {
+          "question": "",
+          "variants": [
+            "",
+            "",
+            "",
+            ""
+          ],
+          "true_answer": 3
+        }
+      ]
+    ]
+  }
+}

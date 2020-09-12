@@ -106,8 +106,9 @@ class FinGameBot(Bot):
         context.bot.send_message(chat_id=update.effective_chat.id, text=help_msg)
 
     def image(self, update, context):
+        image_path = './QR-code_telegram.png'
         context.bot.send_photo(update.effective_chat.id,
-                               'https://www.soyuz.ru/public/uploads/files/2/7442148/2020071012030153ea07b13d.jpg')
+                               photo=open(image_path, 'rb'))
 
     # @staticmethod
     def start(self, update, context):

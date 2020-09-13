@@ -52,26 +52,15 @@ class FinGameBot(Bot):
         self._dispatcher.add_handler(unknown_handler)
 
         self._dispatcher.add_handler(CallbackQueryHandler(self.quiz, pattern='quiz'))
-        self._dispatcher.add_handler(CallbackQueryHandler(self.right, pattern='right'))
-        self._dispatcher.add_handler(CallbackQueryHandler(self.wrong, pattern='wrong'))
+        self._dispatcher.add_handler(CallbackQueryHandler(self.check_answer_action, pattern='answer_\\d'))
         self._dispatcher.add_handler(CallbackQueryHandler(self.end, pattern='end'))
 
     @staticmethod
-    def quiz_keyboard4(options, right_answer):
-        answers = ['right' if (right_answer - 1) == i else 'wrong' for i in range(4)]
-        keyboard = [[InlineKeyboardButton(options[0], callback_data=answers[0]),
-                     InlineKeyboardButton(options[1], callback_data=answers[1])],
-                    [InlineKeyboardButton(options[2], callback_data=answers[2]),
-                     InlineKeyboardButton(options[3], callback_data=answers[3])],
-                    [InlineKeyboardButton("Завершить игру", callback_data='end')]]
-        return InlineKeyboardMarkup(keyboard)
-
-    @staticmethod
-    def quiz_keyboard2(options, right_answer):
-        answers = ['right' if (i + 1) in right_answer else 'wrong' for i in range(2)]
-        keyboard = [[InlineKeyboardButton(options[0], callback_data=answers[0])],
-                    [InlineKeyboardButton(options[1], callback_data=answers[1])],
-                    [InlineKeyboardButton("Завершить игру", callback_data='end')]]
+    def quiz_keyboard_variants(options: list):
+        keyboard = []
+        for i in range(len(options)):
+            keyboard.append([InlineKeyboardButton(options[i], callback_data=f'answer_{i}')])
+        keyboard.append([InlineKeyboardButton("Завершить игру", callback_data='end')])
         return InlineKeyboardMarkup(keyboard)
 
     @staticmethod
@@ -142,10 +131,9 @@ class FinGameBot(Bot):
         question_obj = test.get_question(self._cur_block, self._cur_question)
         question = question_obj.get_text()
         options = question_obj.get_variants_answers()
-        right_answer = question_obj.get_true()
 
         context.bot.send_message(chat_id=update.effective_chat.id, text=question,
-                                 reply_markup=self.quiz_keyboard2(options, right_answer))
+                                 reply_markup=self.quiz_keyboard_variants(options))
 
     def update_cur_position(self, update, context):
         block = self._quiz_sequence.get_block(self._cur_block)
@@ -162,53 +150,35 @@ class FinGameBot(Bot):
             self._cur_block += 1
             self._cur_question = 0
 
-    # TODO universal func for right/not right
-    def generate_answer(self, is_right=True):
+    def generate_message_answer(self, cur_answer: int):
         question_obj = self._quiz_sequence.get_question(self._cur_block, self._cur_question)
         message = question_obj.get_text() + '\n'
-        cur_answer = question_obj.get_true()[0] - 1
-        ans = question_obj.get_variants_answers()[cur_answer] # TODO cur answer should be from real answer :(
+        true_answers = question_obj.get_true()
+        ans = question_obj.get_variants_answers()[cur_answer]
         exp = question_obj.get_variants_explanation()[cur_answer]
-
-        if is_right:
+        is_correct = False
+        if (cur_answer + 1) in true_answers:
             message += f'\nВаш ответ: {ans}. \n\n 🎉 🎉 🎉Совершенно верно! {exp}'
+            is_correct = True
         else:
             message += f'\n🙈 К сожалению, ответ "{ans}" неправильный. \n\n' + f'Объяснение: {exp}'
-        return message
+        return message, is_correct
 
-    def right(self, update, context):
-        question_obj = self._quiz_sequence.get_question(self._cur_block, self._cur_question)
-        congrats = question_obj.get_text() + '\n'
-        cur_answer = question_obj.get_true()[0] - 1
-        ans = question_obj.get_variants_answers()[cur_answer]
-        exp = question_obj.get_variants_explanation()[cur_answer]
-        congrats += f'\nВаш ответ: {ans}. \n\n 🎉 🎉 🎉Совершенно верно! {exp}'
-        # self._story.append([question_obj.get_text(),
-        #                     question_obj.get_vars()[question_obj.get_true()]])
+    def check_answer_action(self, update, context):
+        cur_answer_num = int(str(update['callback_query']['data']).split("answer_")[-1])
+        answer, is_correct = self.generate_message_answer(cur_answer_num)
+        self.print_question_answer(update, context, answer)
+
+    def print_question_answer(self, update, context, answer):
         self.update_cur_position(update, context)
         query = update.callback_query
         context.bot.edit_message_text(chat_id=query.message.chat_id,
                                       message_id=query.message.message_id,
-                                      text=congrats,
+                                      text=answer,
                                       reply_markup=self.quiz_next_keyboard())
 
-    def wrong(self, update, context):
-        question_obj = self._quiz_sequence.get_question(self._cur_block, self._cur_question)
-        explanation = question_obj.get_text() + '\n'
-        cur_answer = question_obj.get_true()[0] % 2 # TODO it is stupid
-        ans = question_obj.get_variants_answers()[cur_answer]
-        exp = question_obj.get_variants_explanation()[cur_answer]
-        explanation += f'\n🙈 К сожалению, ответ "{ans}" неправильный. \n\n' + f'Объяснение: {exp}'
-
-        self.update_cur_position(update, context)
-        query = update.callback_query
-        context.bot.edit_message_text(chat_id=query.message.chat_id,
-                                      message_id=query.message.message_id,
-                                      text=explanation,
-                                      reply_markup=self.quiz_next_keyboard())
-
-    @staticmethod
-    def end(update, context):
+    def end(self, update, context):
+        self._cur_question = 0
         query = update.callback_query
         context.bot.send_message(chat_id=query.message.chat_id,
                                  text="Буду ждать новой игры")

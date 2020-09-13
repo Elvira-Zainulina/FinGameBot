@@ -149,7 +149,7 @@ class FinGameBot(Bot):
             context.bot.send_message(chat_id=update.effective_chat.id, text="Никого не вижу")
         else:
             message = "О, так ты играешь не один!\n" \
-                      "C тобой играют твои следующие друзья (игрок: набрано очков/максимальное количество):\n"
+                      "C тобой играют твои следующие друзья: \n(игрок: набрано очков/максимальное количество):\n"
             friends_score = {}
             n = 1
             for stat_key in self._user_stat.keys():

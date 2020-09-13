@@ -161,7 +161,14 @@ class FinGameBot(Bot):
             context.bot.send_message(chat_id=update.effective_chat.id, text=message)
 
     def my_stat(self, update, context):
-        context.bot.send_message(chat_id=update.effective_chat.id, text="Не знаю")
+        cur_user_id = update.effective_chat["id"]
+        if cur_user_id not in self._user_stat.keys():
+            context.bot.send_message(chat_id=update.effective_chat.id, text="Не знаю")
+        else:
+            right, total = self._user_stat[cur_user_id].quiz_stat.get_score()
+            message = f"Хмм, давай посмотрим 👀\nВсего ты ответил на {total} quiz вопросов, " \
+                      f"а правильными из них оказались {right}"
+            context.bot.send_message(chat_id=update.effective_chat.id, text=message)
 
     def quiz_start(self, update, context):
         update.message.reply_text("Ты готов испытать свои силы?",

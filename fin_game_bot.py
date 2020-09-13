@@ -1,6 +1,6 @@
 from utils import Bot, QuizSequence
 from utils.filters import (FilterQuiz, FilterRound, FilterNothing,
-                           FilterNone, FilterOthers)
+                           FilterNone, FilterOthers, FilterMyStat)
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from telegram.ext import MessageHandler, Filters
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -27,6 +27,7 @@ class FinGameBot(Bot):
         non_filter = FilterNothing()
         None_filter = FilterNone()
         others_filter = FilterOthers()
+        mystat_filter = FilterMyStat()
 
         msg_quiz_handler = MessageHandler((~None_filter) & quiz_filter, self.quiz_start)
         self._dispatcher.add_handler(msg_quiz_handler)
@@ -36,6 +37,9 @@ class FinGameBot(Bot):
 
         msg_others_handler = MessageHandler((~None_filter) & others_filter, self.check_others)
         self._dispatcher.add_handler(msg_others_handler)
+
+        msg_mystat_handler = MessageHandler((~None_filter) & mystat_filter, self.my_stat)
+        self._dispatcher.add_handler(msg_mystat_handler)
 
         echo_handler = MessageHandler((~None_filter) & Filters.text & (~Filters.command) & (~non_filter) &
                                       (~quiz_filter) & (~round_filter), self.unknown)
@@ -55,6 +59,9 @@ class FinGameBot(Bot):
 
         others_handler = CommandHandler('others', self.check_others)
         self._dispatcher.add_handler(others_handler)
+
+        mystat_handler = CommandHandler('mystat', self.my_stat)
+        self._dispatcher.add_handler(mystat_handler)
 
         unknown_handler = MessageHandler(Filters.command, self.unknown)
         self._dispatcher.add_handler(unknown_handler)
@@ -86,6 +93,7 @@ class FinGameBot(Bot):
     @staticmethod
     def quiz_help_keyboard():
         keyboard = [[KeyboardButton("Олег, давай поиграем в quiz")],
+                    [KeyboardButton("Олег, моя статистика")],
                     [KeyboardButton("Олег, как там у других")],
                     [KeyboardButton("Я не хочу играть.")]]
         return ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
@@ -99,6 +107,7 @@ class FinGameBot(Bot):
     @staticmethod
     def help(update, context):
         help_msg = "/quiz - Поиграть в квиз с Олегом, \n" \
+                   "/mystat - Олег, моя статистика \n" \
                    "/others - Олег, как там у других \n" \
                    "/round - Поиграть в Раунд с Олегом (not implemented)."
         context.bot.send_message(chat_id=update.effective_chat.id, text=help_msg)
@@ -126,6 +135,9 @@ class FinGameBot(Bot):
 
     def check_others(self, update, context):
         context.bot.send_message(chat_id=update.effective_chat.id, text="Никого не вижу")
+
+    def my_stat(self, update, context):
+        context.bot.send_message(chat_id=update.effective_chat.id, text="Не знаю")
 
     def quiz_start(self, update, context):
         update.message.reply_text("Ты готов испытать свои силы?",

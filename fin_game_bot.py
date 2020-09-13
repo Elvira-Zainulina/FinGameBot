@@ -135,8 +135,21 @@ class FinGameBot(Bot):
         context.bot.send_message(chat_id=update.effective_chat.id, text="Not implemented error")
 
     def check_others(self, update, context):
-
-        context.bot.send_message(chat_id=update.effective_chat.id, text="Никого не вижу")
+        cur_user_id = update.effective_chat["id"]
+        if len(self._user_stat) == 0 or (cur_user_id in self._user_stat.keys() and len(self._user_stat) == 1):
+            context.bot.send_message(chat_id=update.effective_chat.id, text="Никого не вижу")
+        else:
+            message = "О, так ты играешь не один!\n" \
+                      "C тобой играют твои следующие друзья (игрок: набрано очков/максимальное количество):\n"
+            friends_score = {}
+            n = 1
+            for stat_key in self._user_stat.keys():
+                if stat_key != cur_user_id:
+                    username = self._user_stat[stat_key].get_username()
+                    right, total = self._user_stat[stat_key].quiz_stat.get_score()
+                    message += f"{n}. @{username}: {right}/{total}\n"
+                    n += 1
+            context.bot.send_message(chat_id=update.effective_chat.id, text=message)
 
     def quiz_start(self, update, context):
         update.message.reply_text("Ты готов испытать свои силы?",
@@ -214,6 +227,8 @@ class FinGameBot(Bot):
         cur_answer_num = int(str(update['callback_query']['data']).split("answer_")[-1])
         cur_user = update.effective_chat
         answer, is_correct = self.generate_message_answer(cur_answer_num, cur_user["id"])
+        self._user_stat[cur_user["id"]].quiz_stat.increase_right(is_correct)
+        self._user_stat[cur_user["id"]].quiz_stat.increase_total()
         self.print_question_answer(update, context, answer)
 
     def print_question_answer(self, update, context, answer):

@@ -10,8 +10,9 @@ class Statistic(object):
         self._current_question = 0
         self._current_stage = 0
 
-    def increase_right(self):
-        self._right_answered += 1
+    def increase_right(self, is_right=False):
+        if is_right:
+            self._right_answered += 1
 
     def increase_total(self):
         self._total_answered += 1

@@ -1,4 +1,4 @@
-from utils import Bot, QuizSequence
+from utils import Bot, QuizSequence, UserProgress
 from utils.filters import FilterQuiz, FilterRound, FilterNothing, FilterNone
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from telegram.ext import MessageHandler, Filters
@@ -7,6 +7,7 @@ from telegram import KeyboardButton, ReplyKeyboardMarkup
 
 
 class FinGameBot(Bot):
+    _user_stat = {}  # key - user id, value - user statistic (UserStatistic)
     _quiz_sequence = None
     _round_sequence = None
 
@@ -100,7 +101,16 @@ class FinGameBot(Bot):
                                photo=open(img_path, 'rb'))
 
     def start(self, update, context):
-        hello_msg = "Я твой личный финансовый консультант Олег. " \
+        cur_user = update.effective_chat
+        self._user_stat[cur_user["id"]] = UserProgress(cur_user)
+        greeting_username = " "
+        if cur_user['username'] is not None:
+            greeting_username += "@" + cur_user['username']
+        else:
+            greeting_username = ""
+
+        hello_msg = f"Привет{greeting_username}!\n" \
+                    "Я твой личный финансовый консультант Олег. " \
                     "Я помогу разобраться в принципах финансовой грамотности и " \
                     "покажу, как ты запросто сможешь применять их на практике."
         context.bot.send_message(chat_id=update.effective_chat.id, text=hello_msg,
@@ -120,7 +130,12 @@ class FinGameBot(Bot):
                                   reply_markup=self.quiz_start_keyboard())
 
     def quiz(self, update, context):
-        test = self._quiz_sequence
+        cur_user = update.effective_chat
+        if cur_user["id"] not in self._user_stat.keys():
+            self._user_stat[cur_user["id"]] = UserProgress(cur_user)
+        else:
+            print(self._user_stat[cur_user["id"]].get_username())
+
         if self._cur_block > self._quiz_sequence.get_sequence_size():
             self._cur_block = 0
             context.bot.send_message(chat_id=update.effective_chat.id,
@@ -128,7 +143,7 @@ class FinGameBot(Bot):
                                      reply_markup=self.quiz_start_keyboard())
             return
 
-        question_obj = test.get_question(self._cur_block, self._cur_question)
+        question_obj = self._quiz_sequence.get_question(self._cur_block, self._cur_question)
         question = question_obj.get_text()
         options = question_obj.get_variants_answers()
 

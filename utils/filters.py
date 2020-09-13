@@ -14,3 +14,8 @@ class FilterRound(BaseFilter):
 class FilterNothing(BaseFilter):
     def filter(self, message):
         return 'не хочу' in message.text.lower()  # very stupid rule
+
+
+class FilterNone(BaseFilter):
+    def filter(self, message):
+        return message.text is None  # very stupid rule

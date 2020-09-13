@@ -214,6 +214,9 @@ class FinGameBot(Bot):
         if cur_question < block.get_block_size() - 1:
             self._user_stat[cur_user["id"]].quiz_stat.set_current_question(cur_question + 1)
         else:
+            query = update.callback_query
+            context.bot.edit_message_reply_markup(chat_id=query.message.chat_id,
+                                                  message_id=query.message.message_id)
             advice = block.get_advice()
             picture = block.get_advice_pic()
             context.bot.send_message(chat_id=update.effective_chat.id,

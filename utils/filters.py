@@ -27,3 +27,8 @@ class FilterOthers(BaseFilter):
         return 'олег, как там у других' in message.text.lower() or \
             'проверить остальных' in message.text.lower() or \
             'check others' in message.text.lower()
+
+
+class FilterMyStat(BaseFilter):
+    def filter(self, message):
+        return 'мо' in message.text.lower() and 'статистик' in message.text.lower()

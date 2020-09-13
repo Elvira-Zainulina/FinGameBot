@@ -1,5 +1,6 @@
 from utils import Bot, QuizSequence, UserProgress
-from utils.filters import FilterQuiz, FilterRound, FilterNothing, FilterNone
+from utils.filters import (FilterQuiz, FilterRound, FilterNothing,
+                           FilterNone, FilterOthers)
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from telegram.ext import MessageHandler, Filters
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -26,12 +27,16 @@ class FinGameBot(Bot):
         round_filter = FilterRound()
         non_filter = FilterNothing()
         None_filter = FilterNone()
+        others_filter = FilterOthers()
 
         msg_quiz_handler = MessageHandler((~None_filter) & quiz_filter, self.quiz_start)
         self._dispatcher.add_handler(msg_quiz_handler)
 
         msg_round_handler = MessageHandler((~None_filter) & round_filter, self.round)
         self._dispatcher.add_handler(msg_round_handler)
+
+        msg_others_handler = MessageHandler((~None_filter) & others_filter, self.check_others)
+        self._dispatcher.add_handler(msg_others_handler)
 
         echo_handler = MessageHandler((~None_filter) & Filters.text & (~Filters.command) & (~non_filter) &
                                       (~quiz_filter) & (~round_filter), self.unknown)
@@ -48,6 +53,9 @@ class FinGameBot(Bot):
 
         image_handler = CommandHandler('image', self.image)
         self._dispatcher.add_handler(image_handler)
+
+        others_handler = CommandHandler('others', self.check_others)
+        self._dispatcher.add_handler(others_handler)
 
         unknown_handler = MessageHandler(Filters.command, self.unknown)
         self._dispatcher.add_handler(unknown_handler)
@@ -79,7 +87,7 @@ class FinGameBot(Bot):
     @staticmethod
     def quiz_help_keyboard():
         keyboard = [[KeyboardButton("Олег, давай поиграем в quiz")],
-                    [KeyboardButton("Олег, я хочу поиграть в Раунд")],
+                    [KeyboardButton("Олег, как там у других")],
                     [KeyboardButton("Я не хочу играть.")]]
         return ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
 
@@ -92,7 +100,8 @@ class FinGameBot(Bot):
     @staticmethod
     def help(update, context):
         help_msg = "/quiz - Поиграть в квиз с Олегом, \n" \
-                   "/round - Поиграть в Раунд с Олегом."
+                   "/others - Олег, как там у других \n" \
+                   "/round - Поиграть в Раунд с Олегом (not implemented)."
         context.bot.send_message(chat_id=update.effective_chat.id, text=help_msg)
 
     def image(self, update, context):
@@ -125,25 +134,40 @@ class FinGameBot(Bot):
     def round(update, context):
         context.bot.send_message(chat_id=update.effective_chat.id, text="Not implemented error")
 
+    def check_others(self, update, context):
+
+        context.bot.send_message(chat_id=update.effective_chat.id, text="Никого не вижу")
+
     def quiz_start(self, update, context):
         update.message.reply_text("Ты готов испытать свои силы?",
                                   reply_markup=self.quiz_start_keyboard())
 
     def quiz(self, update, context):
+        # remove keyboard from the previous cell
+        query = update.callback_query
+        context.bot.edit_message_reply_markup(chat_id=query.message.chat_id,
+                                              message_id=query.message.message_id)
+
+        # get user info & insert to stat
         cur_user = update.effective_chat
         if cur_user["id"] not in self._user_stat.keys():
             self._user_stat[cur_user["id"]] = UserProgress(cur_user)
-        else:
-            print(self._user_stat[cur_user["id"]].get_username())
 
-        if self._cur_block > self._quiz_sequence.get_sequence_size():
-            self._cur_block = 0
+        cur_block = self._user_stat[cur_user["id"]].quiz_stat.get_current_stage()
+        cur_question = self._user_stat[cur_user["id"]].quiz_stat.get_current_question()
+        print(self._user_stat[cur_user["id"]].get_username() + f" playing quiz({cur_block}:{cur_question})")
+
+        # check if questions are over
+        if cur_block >= self._quiz_sequence.get_sequence_size():
+            self._user_stat[cur_user["id"]].quiz_stat.set_current_stage(0)
             context.bot.send_message(chat_id=update.effective_chat.id,
                                      text="Новых вопросов нет. Готов ли ты к повторению?",
                                      reply_markup=self.quiz_start_keyboard())
             return
 
-        question_obj = self._quiz_sequence.get_question(self._cur_block, self._cur_question)
+        # generate new question
+        question_obj = self._quiz_sequence.get_question(cur_block, cur_question)
+        self._user_stat[cur_user["id"]].set_question(question_obj)
         question = question_obj.get_text()
         options = question_obj.get_variants_answers()
 
@@ -151,9 +175,12 @@ class FinGameBot(Bot):
                                  reply_markup=self.quiz_keyboard_variants(options))
 
     def update_cur_position(self, update, context):
-        block = self._quiz_sequence.get_block(self._cur_block)
-        if self._cur_question < block.get_block_size() - 1:
-            self._cur_question += 1
+        cur_user = update.effective_chat
+        cur_block = self._user_stat[cur_user["id"]].quiz_stat.get_current_stage()
+        cur_question = self._user_stat[cur_user["id"]].quiz_stat.get_current_question()
+        block = self._quiz_sequence.get_block(cur_block)
+        if cur_question < block.get_block_size() - 1:
+            self._user_stat[cur_user["id"]].quiz_stat.set_current_question(cur_question + 1)
         else:
             advice = block.get_advice()
             picture = block.get_advice_pic()
@@ -162,11 +189,15 @@ class FinGameBot(Bot):
             context.bot.send_photo(chat_id=update.effective_chat.id,
                                    photo=open(picture, 'rb'),
                                    reply_markup=self.quiz_cont_keyboard())
-            self._cur_block += 1
-            self._cur_question = 0
 
-    def generate_message_answer(self, cur_answer: int):
-        question_obj = self._quiz_sequence.get_question(self._cur_block, self._cur_question)
+            self._user_stat[cur_user["id"]].quiz_stat.set_current_stage(cur_block + 1)
+            self._user_stat[cur_user["id"]].quiz_stat.set_current_question(0)
+
+    def generate_message_answer(self, cur_answer: int, cur_user_id):
+        cur_block = self._user_stat[cur_user_id].quiz_stat.get_current_stage()
+        cur_question = self._user_stat[cur_user_id].quiz_stat.get_current_question()
+
+        question_obj = self._quiz_sequence.get_question(cur_block, cur_question)
         message = question_obj.get_text() + '\n'
         true_answers = question_obj.get_true()
         ans = question_obj.get_variants_answers()[cur_answer]
@@ -181,7 +212,8 @@ class FinGameBot(Bot):
 
     def check_answer_action(self, update, context):
         cur_answer_num = int(str(update['callback_query']['data']).split("answer_")[-1])
-        answer, is_correct = self.generate_message_answer(cur_answer_num)
+        cur_user = update.effective_chat
+        answer, is_correct = self.generate_message_answer(cur_answer_num, cur_user["id"])
         self.print_question_answer(update, context, answer)
 
     def print_question_answer(self, update, context, answer):

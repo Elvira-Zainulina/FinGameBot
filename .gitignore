@@ -1,4 +1,6 @@
 run.py
+.DS_Store
+
 
 venv/
 .idea/

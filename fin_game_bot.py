@@ -187,7 +187,7 @@ class FinGameBot(Bot):
 
         cur_block = self._user_stat[cur_user["id"]].quiz_stat.get_current_stage()
         cur_question = self._user_stat[cur_user["id"]].quiz_stat.get_current_question()
-        print(self._user_stat[cur_user["id"]].get_username() + f" playing quiz({cur_block}:{cur_question})")
+        print(str(self._user_stat[cur_user["id"]].get_username()) + f" playing quiz({cur_block}:{cur_question})")
 
         # check if questions are over
         if cur_block >= self._quiz_sequence.get_sequence_size():
